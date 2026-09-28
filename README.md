@@ -8,7 +8,7 @@ The engine runs directly in a web browser. It does not use or require a Twine st
 
 - Twee-style passages using `:: PassageName`
 - Markdown formatting through [`marked`](https://marked.js.org/)
-- Passage links using either Twee-style or custom link syntax
+- Passage links using either Twee-style or Markdown link syntax
 - Automatic start-passage detection
 - Optional `StoryData` metadata
 - External Markdown links
