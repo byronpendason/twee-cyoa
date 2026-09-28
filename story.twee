@@ -1,329 +1,39 @@
 :: StoryTitle
-Twee Adventure Tutorial
+An Example Story
 
 :: Start
-# Welcome to Twee Adventures
+# Hello, world!
 
-This is a tutorial for writing **Twee-based CYOA adventures** with this framework.
+This is *the start* of [[your adventure]].
+[[Non-existent Link]]
 
-The framework loads exactly one external story file:
+:: Your Adventure
+You are at **a fork in the road**. Do you take the [[right path->Certain Doom]]
+or the [[Happy Ever After<-left path]]?
 
-`story.twee`
+Would you like [[a hint|The Oracle]]?
 
-Your HTML file and `story.twee` must be in the same directory. For example:
+:: Certain Doom
+You are attacked by a *band of bandits*. You fight hard and bravely, but in the end **you are killed**.
 
-`index.html`
+[[Restart->Start]]
 
-`story.twee`
+:: Happy Ever After
+You are attacked by *wild dogs*! Before they have a chance to do too much damage
+to you, however, a gunshot scares them off. You look upon your rescuer,
+who is the most beautiful person you've ever met.
 
-The file name must be exactly:
+Six months later, you are married to the person who saved your life, and you
+live **happily ever after**. 
 
-`story.twee`
+**[[The End->Start]]**
 
-These files will not be loaded automatically:
+:: The Oracle
+You seek advice from **The Oracle**. She tells you: 
 
-- `adventure.twee`
-- `my-story.twee`
-- `chapter1.twee`
-- `story.txt`
+```
+* "The right path will lead to `certain doom`."
+* "The left path will lead to your `happy ever after`."
+```
 
-If `story.twee` cannot be loaded, the framework uses its embedded fallback story instead.
-
-Choose a topic:
-
-* [[How Twee files work->Twee Basics]]
-* [[Creating choices and links->Choices]]
-* [[Using Markdown formatting->Markdown]]
-* [[Planning an adventure->Adventure Design]]
-* [[Understanding the required file name->File Name]]
-* [[Read the summary->Summary]]
-
-:: File Name
-# The Required File Name
-
-This framework looks for one specific file:
-
-`story.twee`
-
-It does not search the directory for Twee files, and it does not automatically load files with other names.
-
-Your project should look like this:
-
-`index.html`
-
-`story.twee`
-
-The HTML page runs:
-
-`fetch("story.twee")`
-
-That means the browser requests a file named `story.twee` from the same directory as the HTML page.
-
-For example, this structure works:
-
-`my-adventure/index.html`
-
-`my-adventure/story.twee`
-
-This structure does not work automatically:
-
-`my-adventure/index.html`
-
-`my-adventure/adventure.twee`
-
-To use a different filename, you would need to change the JavaScript request in the HTML file. For example:
-
-`fetch("adventure.twee")`
-
-However, without changing the JavaScript, only `story.twee` will be loaded.
-
-When `story.twee` is missing or cannot be loaded, the embedded fallback story is displayed instead.
-
-[[Return to the tutorial->Start]]
-
-:: Twee Basics
-# How Twee Files Work
-
-A Twee file is made up of passages. Each passage begins with a header:
-
-`:: Passage Name`
-
-Everything after that header belongs to the passage until the next `::` header.
-
-For example:
-
-`:: Forest`
-
-`You enter a dark forest.`
-
-Passage names are converted into links by changing them to lowercase and replacing spaces with hyphens.
-
-Therefore, this passage:
-
-`:: Dark Forest`
-
-has the internal link name:
-
-`dark-forest`
-
-The first ordinary passage in the file becomes the starting passage unless a `StoryData` passage specifies a different start passage.
-
-The `StoryTitle` passage is special. Its content becomes the document title, so it is not displayed as an ordinary passage.
-
-[[Learn about choices->Choices]]
-
-[[Back to the tutorial->Start]]
-
-:: Choices
-# Creating Choices and Links
-
-Choices connect one passage to another.
-
-The simplest link uses the passage name as both its label and destination:
-
-`[[Forest]]`
-
-A link can also use a different label:
-
-`[[Enter the forest->Forest]]`
-
-The destination appears after the arrow. Passage names are not case-sensitive for links, and spaces are converted to hyphens.
-
-You can also write links in reverse form:
-
-`[[Forest<-Enter the forest]]`
-
-Or use a vertical bar:
-
-`[[Enter the forest|Forest]]`
-
-For example:
-
-* [[Open the wooden door->Wooden Door]]
-* [[Climb the stairs->Stairs]]
-* [[Return to the choices lesson->Choices]]
-
-A link to a passage that does not exist is displayed in red and produces an error if selected.
-
-:: Wooden Door
-# The Wooden Door
-
-You open the wooden door and discover a quiet garden.
-
-The door closes behind you.
-
-* [[Explore the garden->Garden]]
-* [[Return to the choices lesson->Choices]]
-
-:: Stairs
-# The Stairs
-
-You climb the stairs and reach a small room with a single window.
-
-A beam of moonlight shines across the floor.
-
-* [[Look through the window->Window]]
-* [[Return to the choices lesson->Choices]]
-
-:: Garden
-# The Garden
-
-The garden is filled with silver flowers. A narrow path leads to a fountain.
-
-You have reached the end of this example branch.
-
-* [[Restart the tutorial->Start]]
-* [[Read about Markdown->Markdown]]
-
-:: Window
-# The Window
-
-Through the window, you see the garden below and the forest beyond it.
-
-You have reached the end of this example branch.
-
-* [[Restart the tutorial->Start]]
-* [[Read about Markdown->Markdown]]
-
-:: Markdown
-# Text Formatting with Markdown
-
-Passage text is rendered as Markdown.
-
-## Headings
-
-Use one or more `#` characters for headings:
-
-`# Large heading`
-
-`## Smaller heading`
-
-## Emphasis
-
-Use asterisks for emphasis:
-
-`*italic text*`
-
-`**bold text**`
-
-You can also use underscores:
-
-`_italic text_`
-
-`__bold text__`
-
-## Lists
-
-Unordered lists begin with a hyphen or an asterisk:
-
-`- First item`
-
-`- Second item`
-
-Ordered lists use numbers:
-
-`1. First step`
-
-`2. Second step`
-
-## Links
-
-Normal Markdown links are supported:
-
-`[Visit an external website](https://example.com)`
-
-Links to passages can be written using the framework's Twee link syntax:
-
-`[[Continue->Next Passage]]`
-
-Use Twee links for choices within your adventure.
-
-## Quotes
-
-Begin a line with `>` to create a quotation:
-
-`> The forest was silent.`
-
-## Code
-
-Use backticks for inline code:
-
-`:: Passage Name`
-
-Markdown formatting only controls how text is displayed. It does not add game logic.
-
-This framework does not interpret Twine macros such as `<<if>>`, `<<set>>`, or `<<link>>`.
-
-* [[Learn about adventure design->Adventure Design]]
-* [[Return to the tutorial->Start]]
-
-:: Adventure Design
-# Planning an Adventure
-
-A good CYOA adventure usually has:
-
-1. An opening situation
-2. A meaningful choice
-3. Different consequences
-4. Several possible endings
-
-Start by deciding what the player needs to accomplish.
-
-Then divide the story into passages. Each passage should describe what happens after a choice and should provide one or more new choices.
-
-Keep passage names unique. If two passages have the same name, the later one replaces the earlier one in the loaded story.
-
-Use short, descriptive passage names such as:
-
-- `Forest`
-- `Old Village`
-- `Mountain Pass`
-- `Good Ending`
-
-* [[Return to the beginning->Start]]
-* [[Read the summary->Summary]]
-
-:: Summary
-# Tutorial Summary
-
-Your project should contain:
-
-`index.html`
-
-`story.twee`
-
-The framework loads only the file named `story.twee`.
-
-A basic story file looks like this:
-
-`:: StoryTitle`
-
-`My Adventure`
-
-`:: Start`
-
-`# The Beginning`
-
-`You stand at a crossroads.`
-
-`[[Take the left path->Left Path]]`
-
-`[[Take the right path->Right Path]]`
-
-Remember:
-
-- Name the external story file exactly `story.twee`.
-- Place it in the same directory as the HTML file.
-- Begin each passage with `:: Passage Name`.
-- Put passage content on the following lines.
-- Use `[[Label->Passage Name]]` to create choices.
-- Use Markdown for headings, emphasis, lists, quotes, and code.
-- Keep passage names unique.
-- The first ordinary passage is the default starting passage.
-- Twine story formats are not supported.
-- Twine macros, variables, conditions, and format-specific code are not supported.
-- If `story.twee` is missing, the embedded fallback story is used.
-
-You are ready to write your own adventure.
-
-[[Restart the tutorial->Start]]
+[[Return->Your Adventure]]
