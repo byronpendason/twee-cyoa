@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twee-CYOA</title>
+    <style>
+        body {
+          font-family: sans-serif;
+          background-color: black;
+          color: lightgreen;
+        }
+    
+        #passage a {
+          color: inherit;
+          font-variant-caps: petite-caps;
+        }
+    
+        #twee {
+          display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <script id="twee" type="text/plain">
+:: StoryTitle
+No Story found.
+
+:: Start
+# No Story Found
+      
+No story was found. Place a file named `story.twee` with your story in the same directory as this file.
+    </script>
+    <div id="passage"></div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+    <script>
+        const passage = document.getElementById("passage");
+        let story = {};
+        let start = null;
+        let currentPassage;
+        
+        
+        fetch("story.twee")
+          .then((res) => {
+              if (!res.ok) throw new Error("The file 'story.twee' was not found. Message:");
+            
+              return res.text();
+          })
+          .then((text) => {
+              if (text.trim() === "") {
+                  text = document.getElementById("twee").textContent;
+              }
+            
+            loadStory(text);
+          })
+          .catch((e) => {
+              loadStory(document.getElementById("twee").textContent);
+          });
+        
+        function loadStory(text) {
+          for (let page of text.split("::")) {
+              let index = page.search("\n");
+              if (index <= 0) continue;
+              let id = page.substr(0, index).trim().toLowerCase().replaceAll(" ", "-");
+              let content = page.substr(index + 1).trim();
+              console.log("LOADED PASSAGE:", id, content);
+        
+              if (id === "storytitle") {
+                document.title = content;
+                story[ "StoryTitle" ] = content;
+                continue;
+              } else if (id === "storydata") {
+                try {
+                  story[ "StoryData" ] = JSON.parse(content);
+                  if (story[ "StoryData" ].hasOwnProperty("start")) start = story[ "StoryData" ][ "start" ].trim().toLowerCase().replaceAll(" ", "-");
+                  if (story[ "StoryData" ].hasOwnProperty("format")) alert("WARNING:\nStory formats are not supported!");
+                  continue;
+                } catch (err) {
+                  alert(err.message);
+                }
+              }
+        
+              if (!start) start = id;
+              story[ id ] = content;
+            }
+            if (!start) {
+              alert("Error:\nNo passages were detected.");
+              return;
+            } else if (!story.hasOwnProperty(start)) {
+              alert(`Error:\nStart passage '${start}' was not found.`);
+              return;
+            }
+        
+            currentPassage = start;
+            passage.innerHTML = displayPassage(story[ start ]);
+        }
+        
+        function displayPassage(text) {
+          // Convert Markdown links
+          text = text.replace(
+            /(?<!\[)(?<!\!)\[([^\[\]]+)\]\(([^()\[\]]+)\)/g,
+            (match, display, destination) => {
+              if (destination.trim().toLowerCase().startsWith("http")) {
+                return match;
+              }
+        
+              return `[[${display}->${destination}]]`;
+            }
+          );
+        
+          const pattern = /(```[\s\S]*?```|`[^`]*`)|(\[\[([^\]]+)\]\])/g;
+          let matches = [ ...text.matchAll(pattern) ];
+        
+          if (matches) {
+            for (const match of matches) {
+              if (match[ 3 ]) {
+                const link = match[ 3 ];
+        
+                let choiceLink, id, display;
+                if (link.includes("->")) {
+                  id = link.trim().split("->")[ 1 ].toLowerCase().replaceAll(" ", "-");
+                  display = link.split("->")[ 0 ];
+                } else if (link.includes("<-")) {
+                  id = link.trim().split("<-")[ 0 ].toLowerCase().replaceAll(" ", "-");
+                  display = link.split("<-")[ 1 ];
+                } else if (link.includes("|")) {
+                  id = link.trim().split("|")[ 1 ].toLowerCase().replaceAll(" ", "-");
+                  display = link.split("|")[ 0 ];
+                } else {
+                  id = link.trim().toLowerCase().replaceAll(" ", "-");
+                  display = link;
+                }
+        
+                choiceLink = `<a href="#${id}" onclick="gotoPassage('${id}')">${display}</a>`;
+        
+                if (!story.hasOwnProperty(id)) {
+                  choiceLink = choiceLink.replace("\<a", '\<a style="color: red"');
+                }
+        
+                text = text.replace(`[[${link}]]`, choiceLink);
+              }
+            }
+          }
+        
+          return marked.parse(text);
+        }
+        
+        function gotoPassage(id) {
+          if (!story.hasOwnProperty(id)) {
+            alert(`Error in passage '${currentPassage}':\n The passage '${id}' does not exist!`);
+            return;
+          }
+        
+          currentPassage = id;
+          passage.innerHTML = displayPassage(story[ id ]);
+        
+          return false;
+        }
+    </script>
+</body>
+
+</html>

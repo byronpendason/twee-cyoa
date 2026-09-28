@@ -1,0 +1,743 @@
+# Twee-CYOA
+
+A lightweight, browser-based engine for writing and playing choose-your-own-adventure stories using [Twee](https://twinery.org/) passage syntax and Markdown formatting.
+
+The engine runs directly in a web browser. It does not use or require a Twine story format. Stories are loaded from a plain-text file named `story.twee`.
+
+## Features
+
+- Twee-style passages using `:: PassageName`
+- Markdown formatting through [`marked`](https://marked.js.org/)
+- Passage links using either Twee-style or custom link syntax
+- Automatic start-passage detection
+- Optional `StoryData` metadata
+- External Markdown links
+- A built-in fallback story if `story.twee` is missing or empty
+- No build process or server-side code required
+
+## File Structure
+
+A basic project contains:
+
+```text
+project/
+├── index.html
+└── story.twee
+```
+
+The HTML file contains the engine. The story itself is stored separately in `story.twee`.
+
+The engine requests the story with:
+
+```javascript
+fetch("story.twee")
+```
+
+Therefore, `story.twee` must be in the same directory as the HTML file unless the fetch path is changed.
+
+## Running the Engine
+
+Because browsers commonly block local `fetch()` requests, do not usually open the HTML file directly with a `file://` URL.
+
+Instead, serve the project through a local web server.
+
+For example, with Python:
+
+```bash
+python -m http.server 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000/
+```
+
+You can also use another static server, such as a code editor’s live-server extension or a deployed web server.
+
+## Writing a Story
+
+A passage begins with two colons followed by its name:
+
+```twee
+:: Start
+Welcome to the adventure.
+
+You stand at the entrance to a dark forest.
+```
+
+The passage name is converted into an internal identifier by:
+
+1. Removing leading and trailing whitespace
+2. Converting the name to lowercase
+3. Replacing spaces with hyphens
+
+For example:
+
+```twee
+:: Dark Forest
+```
+
+becomes:
+
+```text
+dark-forest
+```
+
+Passage names are therefore case-insensitive and spaces are treated as hyphens.
+
+## A Complete Example
+
+Create a file named `story.twee`:
+
+```twee
+:: StoryTitle
+The Forest of Doors
+
+:: Start
+# The Forest of Doors
+
+You awaken beneath a sky full of unfamiliar stars.
+
+There are two paths ahead.
+
+- [[Enter the forest->Forest]]
+- [[Follow the river->River]]
+
+:: Forest
+# The Forest
+
+The trees close around you. Somewhere in the darkness, something is watching.
+
+[[Return to the clearing->Start]]
+
+:: River
+# The River
+
+The river carries a small wooden boat toward a distant light.
+
+- [[Take the boat->Boat]]
+- [[Return to the crossroads->Start]]
+
+:: Boat
+# The Boat
+
+You climb aboard. The river pulls you toward the light.
+
+**You have found an ending.**
+```
+
+When the story loads, the engine displays the `Start` passage. Clicking a link replaces the current passage with the destination passage.
+
+## Passage Links
+
+The engine supports several link styles.
+
+### Destination after an arrow
+
+```twee
+[[Display text->Passage Name]]
+```
+
+Example:
+
+```twee
+[[Enter the castle->Castle]]
+```
+
+This displays:
+
+> Enter the castle
+
+and navigates to the passage:
+
+```text
+castle
+```
+
+### Destination before an arrow
+
+```twee
+[[Passage Name<-Display text]]
+```
+
+Example:
+
+```twee
+[[Castle<-Enter the castle]]
+```
+
+### Pipe syntax
+
+```twee
+[[Display text|Passage Name]]
+```
+
+Example:
+
+```twee
+[[Enter the castle|Castle]]
+```
+
+### Link using the passage name
+
+```twee
+[[Castle]]
+```
+
+This displays `Castle` and navigates to the passage named `Castle`.
+
+### Link text containing spaces
+
+```twee
+[[Open the ancient door->Ancient Door]]
+```
+
+The destination `Ancient Door` is converted to:
+
+```text
+ancient-door
+```
+
+## Markdown Links
+
+Standard Markdown links to internal passages are also converted automatically:
+
+```markdown
+[Enter the castle](Castle)
+```
+
+This behaves like:
+
+```twee
+[[Enter the castle->Castle]]
+```
+
+Markdown links whose destination starts with `http` are preserved as normal external links:
+
+```markdown
+[Visit the project website](https://example.com)
+```
+
+The engine does not convert these links into passage links.
+
+### Internal Markdown-link limitations
+
+The internal-link conversion uses a regular expression and is intended for simple Markdown links. The following forms may not be converted reliably:
+
+- Destinations containing parentheses
+- Destinations containing square brackets
+- Complex nested Markdown
+- Some escaped or unusual link syntax
+
+For maximum compatibility, use the engine’s `[[...]]` syntax for passage links.
+
+## Markdown Formatting
+
+Passage content is passed to `marked.parse()`, so standard Markdown can be used.
+
+### Headings
+
+```markdown
+# Main heading
+## Smaller heading
+### Subheading
+```
+
+### Emphasis
+
+```markdown
+*Italic text*
+
+**Bold text**
+
+***Bold italic text***
+```
+
+### Lists
+
+```markdown
+- First option
+- Second option
+- Third option
+```
+
+Numbered lists are also supported:
+
+```markdown
+1. Wake up
+2. Look around
+3. Go back to sleep
+```
+
+### Block quotes
+
+```markdown
+> The walls began to move.
+```
+
+### Code
+
+Inline code:
+
+```markdown
+The inscription reads `OPEN`.
+```
+
+Fenced code:
+
+````markdown
+```text
+A block of code or monospaced text
+```
+````
+
+The engine avoids interpreting passage links inside inline and fenced code spans during its custom link-processing step.
+
+### Images
+
+Markdown image syntax is handled by `marked`:
+
+```markdown
+![A forest](images/forest.jpg)
+```
+
+The image path is relative to the page displaying the story.
+
+## Choosing the Start Passage
+
+By default, the first ordinary passage in the file becomes the start passage.
+
+For example:
+
+```twee
+:: Start
+This passage is displayed first.
+```
+
+If `Start` is the first passage, it becomes the starting point automatically.
+
+The engine also supports an explicit start passage through `StoryData`.
+
+```twee
+:: StoryData
+{
+  "start": "Opening"
+}
+
+:: Opening
+# The Opening
+
+The story begins here.
+
+:: Other Passage
+This passage is not displayed first.
+```
+
+The `start` value is normalized in the same way as passage names:
+
+- Converted to lowercase
+- Spaces replaced with hyphens
+
+Thus, these values refer to the same passage:
+
+```json
+{
+  "start": "Dark Forest"
+}
+```
+
+```json
+{
+  "start": "dark-forest"
+}
+```
+
+## Story Metadata
+
+### StoryTitle
+
+A passage named `StoryTitle` sets the browser document title.
+
+```twee
+:: StoryTitle
+The Forest of Doors
+```
+
+This passage is treated as metadata and is not displayed as a playable passage.
+
+If no `StoryTitle` passage is provided, the HTML document’s default title remains in effect.
+
+### StoryData
+
+A passage named `StoryData` is parsed as JSON.
+
+```twee
+:: StoryData
+{
+  "start": "Start"
+}
+```
+
+The current engine recognizes the following properties:
+
+#### `start`
+
+Sets the passage displayed when the story begins.
+
+```json
+{
+  "start": "Start"
+}
+```
+
+#### `format`
+
+If `format` is present, the engine displays a warning that story formats are not supported.
+
+```json
+{
+  "format": "Harlowe",
+  "start": "Start"
+}
+```
+
+The `format` property does not select or load a story format. It only triggers a warning.
+
+Other properties may be included in `StoryData`, but the engine does not currently use them.
+
+## Passage Names and Destination Rules
+
+Passage names are normalized using:
+
+```javascript
+.toLowerCase().replaceAll(" ", "-")
+```
+
+For example:
+
+| Written name | Internal identifier |
+|---|---|
+| `Start` | `start` |
+| `Dark Forest` | `dark-forest` |
+| `THE CASTLE` | `the-castle` |
+
+A link destination must resolve to the same normalized identifier as its passage.
+
+```twee
+:: Dark Forest
+```
+
+should be linked using one of these forms:
+
+```twee
+[[Dark Forest]]
+[[Explore the forest->Dark Forest]]
+[[Explore the forest|Dark Forest]]
+```
+
+All resolve to:
+
+```text
+dark-forest
+```
+
+The current normalization only replaces ordinary space characters. It does not convert punctuation, underscores, or multiple other kinds of whitespace.
+
+## Missing Passage Links
+
+If a link points to a passage that does not exist, the link is displayed in red.
+
+For example:
+
+```twee
+[[Secret ending->Secret Ending]]
+```
+
+If there is no passage named `Secret Ending`, the link is marked red. Clicking it displays an error:
+
+```text
+Error in passage 'current-passage':
+The passage 'secret-ending' does not exist!
+```
+
+The story continues running after the error dialog is dismissed.
+
+A missing link can be fixed by adding the corresponding passage:
+
+```twee
+:: Secret Ending
+You discovered the secret ending.
+```
+
+## Navigation
+
+When a valid passage link is clicked:
+
+1. The engine checks whether the destination exists.
+2. The current passage identifier is updated.
+3. The destination passage is rendered.
+4. The previous passage is replaced in the page.
+
+The engine does not currently provide:
+
+- Browser-history navigation between passages
+- A back button inside the story
+- Save states
+- Variables
+- Conditional text
+- Inventory systems
+- Macros
+- Timers
+- Story format support
+- Passage tags
+- Automatic passage-state tracking
+
+The browser’s URL hash is changed to the destination identifier through the link’s `href`, but the engine does not currently read the hash during startup or use it to restore the passage after a page reload.
+
+## Default Fallback Story
+
+The HTML file contains an embedded fallback story:
+
+```html
+<script id="twee" type="text/plain">
+:: StoryTitle
+No Story found.
+
+:: Start
+# No Story Found
+      
+No story was found. Place a file named `story.twee` with your story in the same directory as this file.
+</script>
+```
+
+The fallback is used when:
+
+- `story.twee` cannot be fetched
+- `story.twee` returns an HTTP error
+- `story.twee` is empty or contains only whitespace
+
+You can edit this embedded story to customize the message shown when no external story is available.
+
+## Story Parsing Rules
+
+The story is split wherever the text contains:
+
+```text
+::
+```
+
+Each resulting section is interpreted as a possible passage.
+
+A valid passage must have:
+
+- A passage name before the first newline
+- Passage content after the first newline
+
+For example:
+
+```twee
+:: Start
+This is the passage content.
+```
+
+The parser:
+
+1. Splits the story at `::`
+2. Finds the first newline in each section
+3. Treats the preceding text as the passage name
+4. Treats the remaining text as the passage content
+5. Trims whitespace from both
+6. Stores the passage under its normalized identifier
+
+Because the parser splits on every occurrence of `::`, avoid using an unescaped `::` sequence in passage content if it could be mistaken for a passage separator.
+
+## Errors
+
+The engine displays an error when:
+
+### No passages are detected
+
+This occurs if no valid passage sections are found.
+
+```text
+Error:
+No passages were detected.
+```
+
+### The configured start passage is missing
+
+If `StoryData` specifies a start passage that does not exist:
+
+```text
+Error:
+Start passage 'passage-name' was not found.
+```
+
+### Invalid StoryData JSON
+
+If the `StoryData` content is not valid JSON, the browser displays the JSON parsing error.
+
+For example, this is invalid:
+
+```twee
+:: StoryData
+{
+  "start": "Start",
+}
+```
+
+The trailing comma must be removed:
+
+```twee
+:: StoryData
+{
+  "start": "Start"
+}
+```
+
+### Missing destination passage
+
+A link to a nonexistent passage produces an error when clicked. Missing links are also styled red.
+
+## Styling
+
+The default engine styles the page with a black background and light-green text:
+
+```css
+body {
+  font-family: sans-serif;
+  background-color: black;
+  color: lightgreen;
+}
+```
+
+Links inherit the text color and use petite capitals:
+
+```css
+#passage a {
+  color: inherit;
+  font-variant-caps: petite-caps;
+}
+```
+
+To customize the appearance, edit the CSS in `index.html`.
+
+For example:
+
+```css
+body {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #101820;
+  color: #f0f4f8;
+}
+
+#passage a {
+  color: #7dd3fc;
+  font-variant-caps: normal;
+}
+```
+
+The story is rendered inside:
+
+```html
+<div id="passage"></div>
+```
+
+## Dependencies
+
+The engine loads Marked from jsDelivr:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+```
+
+The engine therefore requires network access to load the library unless Marked is downloaded and served locally.
+
+To use a local copy, replace the CDN script with a local path:
+
+```html
+<script src="marked.umd.js"></script>
+```
+
+## Security Considerations
+
+Passage Markdown is rendered as HTML through `marked`. Story authors should only use trusted story files.
+
+Do not load untrusted or user-submitted story content without adding HTML sanitization. Markdown can potentially contain raw HTML, scripts, event handlers, or unsafe URLs depending on the parser configuration and input.
+
+For stories from untrusted sources, use a sanitizer such as DOMPurify and sanitize the rendered output before assigning it to `innerHTML`.
+
+The current engine also creates passage links with inline `onclick` handlers:
+
+```html
+<a href="#destination" onclick="gotoPassage('destination')">
+```
+
+For stories containing untrusted passage names or link text, this should be replaced with safer DOM event handling rather than constructing HTML strings directly.
+
+## Recommended Story Template
+
+The following template provides a good starting point:
+
+```twee
+:: StoryTitle
+My Adventure
+
+:: StoryData
+{
+  "start": "Start"
+}
+
+:: Start
+# The Beginning
+
+Your adventure begins.
+
+- [[Go left->Left Path]]
+- [[Go right->Right Path]]
+
+:: Left Path
+# The Left Path
+
+You discover an old bridge.
+
+[[Return->Start]]
+
+:: Right Path
+# The Right Path
+
+You find a locked gate.
+
+- [[Try the lock->Gate]]
+- [[Return->Start]]
+
+:: Gate
+# The Gate
+
+The gate opens, revealing a hidden garden.
+
+**You win.**
+```
+
+## Complete Authoring Checklist
+
+Before publishing a story, check that:
+
+- The file is named `story.twee`
+- The file is in the same directory as the HTML engine
+- Every passage begins with `::`
+- Every passage has a name and a newline after the name
+- The chosen start passage exists
+- Every internal link points to an existing passage
+- Passage names and link destinations normalize to the same identifier
+- `StoryData` contains valid JSON
+- External Markdown links use complete `http://` or `https://` URLs
+- The story is tested through a web server rather than opened directly with `file://`
+- Any untrusted story content is sanitized before rendering
+
+## License
+
+No license is specified by the engine code. Add a license file and update this section if you plan to distribute the engine or accept contributions.
