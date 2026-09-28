@@ -737,7 +737,3 @@ Before publishing a story, check that:
 - External Markdown links use complete `http://` or `https://` URLs
 - The story is tested through a web server rather than opened directly with `file://`
 - Any untrusted story content is sanitized before rendering
-
-## License
-
-No license is specified by the engine code. Add a license file and update this section if you plan to distribute the engine or accept contributions.
